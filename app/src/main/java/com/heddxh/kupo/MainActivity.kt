@@ -43,6 +43,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import com.heddxh.kupo.network.NewsService
 import com.heddxh.kupo.network.dto.News
 import com.heddxh.kupo.ui.theme.KupoTheme
@@ -124,7 +125,7 @@ private fun Cards(newsList: List<News>, modifier: Modifier = Modifier) {
     LazyColumn(contentPadding = PaddingValues(16.dp), modifier = modifier) {
         items(newsList) { news ->
             CardItem(
-                image = fetchImage(news.homeImagePath),
+                imagePath = news.homeImagePath,
                 title = news.title,
                 summary = news.summary,
                 Modifier.padding(vertical = 8.dp)
@@ -135,15 +136,17 @@ private fun Cards(newsList: List<News>, modifier: Modifier = Modifier) {
 
 @Composable
 private fun CardItem(
-    image: Painter,
+    imagePath: String,
     title: String,
     summary: String,
     modifier: Modifier = Modifier
 ) {
     Card(modifier = modifier) {
-        Image(
-            painter = image,
-            contentDescription = null
+        AsyncImage(
+            model = imagePath,
+            contentDescription = null,
+            contentScale = ContentScale.FillWidth,
+            modifier = Modifier.fillMaxWidth()
         )
         Column(Modifier.padding(16.dp)) {
             Text(
@@ -191,14 +194,6 @@ fun HomePreview() {
     }
 }
 
-private val imageData = listOf(
-    R.drawable.screenshot_20230905_163858, R.drawable.screenshot_20230905_163916,
-    R.drawable.screenshot_20230905_164822, R.drawable.screenshot_20230905_165437,
-    R.drawable.screenshot_20230905_173444, R.drawable.screenshot_20230905_173454,
-    R.drawable.screenshot_20230905_174304, R.drawable.screenshot_20230905_214857,
-    R.drawable.screenshot_20230905_222346, R.drawable.screenshot_20230905_222813
-)
-
 private val fakeSingleNews = News(
     link = "https://ff.web.sdo.com/web8/index.html#/newstab/newscont/352734",
     homeImagePath =  "https://fu5.web.sdo.com/10036/202308/16922658666728.jpg",
@@ -208,12 +203,6 @@ private val fakeSingleNews = News(
     title = "9/9-9/10 《最终幻想14》参展北京核聚变2023！"
 )
 
-@Composable
-private fun fetchImage(path: String): Painter {
-    /*TODO: 加载网络图片*/
-    return painterResource(R.drawable.screenshot_20230905_173454)
-}
-
 private val fakeNewsList = listOf<News>(
     fakeSingleNews,
     fakeSingleNews,
@@ -222,3 +211,29 @@ private val fakeNewsList = listOf<News>(
     fakeSingleNews,
     fakeSingleNews
 )
+
+@Preview
+@Composable
+private fun CardItemPreview() {
+    Card(modifier = Modifier) {
+        Image(
+            painter = painterResource(id = R.drawable.test),
+            contentDescription = null,
+            contentScale = ContentScale.FillWidth,
+            modifier = Modifier.fillMaxWidth()
+        )
+        Column(Modifier.padding(16.dp)) {
+            Text(
+                text = "Title",
+                style = MaterialTheme.typography.titleLarge
+            )
+            Spacer(modifier = Modifier.height(32.dp))
+            Text(
+                text = "最终幻想14将于9月9日-9月10日参展北京核聚变2023！",
+                style = MaterialTheme.typography.titleSmall
+            )
+        }
+    }
+}
+
+
