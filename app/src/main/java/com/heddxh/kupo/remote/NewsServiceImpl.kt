@@ -1,6 +1,6 @@
-package com.heddxh.kupo.network
+package com.heddxh.kupo.remote
 
-import com.heddxh.kupo.network.dto.*
+import com.heddxh.kupo.remote.dto.*
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.ClientRequestException
@@ -34,7 +34,9 @@ class NewsServiceImpl(
                 val rawBody: String = response.body()
                 val dirtyIndexStart = rawBody.indexOf('(')
                 val dirtyIndexEnd = rawBody.lastIndexOf(')')
-                val rawBodyData = Json.decodeFromString<RawBodyClass>(rawBody.substring(dirtyIndexStart + 1, dirtyIndexEnd))
+                val rawBodyData = Json.decodeFromString<RawBodyClass>(
+                    rawBody.substring(dirtyIndexStart + 1, dirtyIndexEnd)
+                )
                 rawDataToNews(rawBodyData.Data)
             } catch(e: RedirectResponseException) {
                 // 3xx - responses

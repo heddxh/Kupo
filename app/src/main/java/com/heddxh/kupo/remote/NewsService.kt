@@ -1,11 +1,9 @@
-package com.heddxh.kupo.network
+package com.heddxh.kupo.remote
 
-import com.heddxh.kupo.network.dto.News
+import com.heddxh.kupo.remote.dto.News
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.android.Android
 import io.ktor.client.plugins.compression.ContentEncoding
-import io.ktor.client.plugins.logging.LogLevel
-import io.ktor.client.plugins.logging.Logging
 
 interface NewsService {
     suspend fun getNews(): List<News>
