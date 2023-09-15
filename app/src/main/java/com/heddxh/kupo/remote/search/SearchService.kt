@@ -6,7 +6,7 @@ import io.ktor.client.engine.android.Android
 import io.ktor.client.plugins.compression.ContentEncoding
 
 interface SearchService {
-    suspend fun getSearch(): List<newBeeSearchSingle>
+    suspend fun getSearch(query: String): List<newBeeSearchSingle>
 
     companion object {
         fun create(): SearchService {

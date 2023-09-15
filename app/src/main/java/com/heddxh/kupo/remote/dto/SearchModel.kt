@@ -20,6 +20,6 @@ data class newBeeSearchSingle(
 
 @Serializable
 data class newBeeSearchSingleHighlight(
-    val title: List<String>,
-    val body: List<String>
+    val title: List<String> = listOf("123"),
+    val body: List<String> = listOf("123")
 )

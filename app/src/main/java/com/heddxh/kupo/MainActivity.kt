@@ -35,6 +35,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,6 +50,7 @@ import com.heddxh.kupo.remote.dto.News
 import com.heddxh.kupo.remote.dto.newBeeSearchSingle
 import com.heddxh.kupo.remote.search.SearchService
 import com.heddxh.kupo.ui.theme.KupoTheme
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -64,19 +66,27 @@ class MainActivity : ComponentActivity() {
                     value = newsService.getNews()
                 }
             )
-            val searchList by produceState<List<newBeeSearchSingle>>(
+            var query by remember { mutableStateOf("") }
+            /* val searchList by produceState<List<newBeeSearchSingle>>(
                 initialValue = emptyList(),
-                producer = {
-                    value = searchService.getSearch()
-                }
-            )
+                query
+            ) {
+                    value = searchService.getSearch("")
+            } */
+            var searchList: List<newBeeSearchSingle> by remember { mutableStateOf(emptyList()) }
             KupoTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    Home(newsList, searchList)
+                    val scope = rememberCoroutineScope()
+                    Home(newsList = newsList, searchList = searchList, query = query) {
+                        query = it
+                        scope.launch {
+                            searchList = searchService.getSearch(query)
+                        }
+                    }
                 }
             }
         }
@@ -86,11 +96,13 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Home(
+    modifier: Modifier = Modifier,
     newsList: List<News> = fakeNewsList,
     searchList: List<newBeeSearchSingle> = fakeSearchList,
-    modifier: Modifier = Modifier
+    query: String,
+    onQueryChange: (String) -> Unit
 ) {
-    var query by remember { mutableStateOf("") }
+    // var query by remember { mutableStateOf("") }
     var searchActive by remember { mutableStateOf(false) }
     Column(modifier = Modifier) {
         Box(
@@ -99,7 +111,7 @@ fun Home(
             SearchBar( // TODO: 宽度修正
                 modifier = Modifier.align(Alignment.TopCenter),
                 query = query,
-                onQueryChange = { query = it },
+                onQueryChange = onQueryChange,
                 onSearch = {},
                 active = searchActive,
                 onActiveChange = { state ->
@@ -167,7 +179,10 @@ private fun CardItem(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchView(searchList: List<newBeeSearchSingle> = fakeSearchList, modifier: Modifier = Modifier) {
+fun SearchView(
+    modifier: Modifier = Modifier,
+    searchList: List<newBeeSearchSingle> = fakeSearchList
+) {
     SearchBar(
         query = "query",
         onQueryChange = { },
@@ -214,7 +229,7 @@ private fun Carousel(@DrawableRes imageList: List<Int>, modifier: Modifier = Mod
 @Composable
 fun HomePreview() {
     KupoTheme {
-        Home()
+        //Home()
     }
 }
 
@@ -227,7 +242,7 @@ private val fakeSingleNews = News(
     title = "9/9-9/10 《最终幻想14》参展北京核聚变2023！"
 )
 
-private val fakeNewsList = listOf<News>(
+private val fakeNewsList = listOf(
     fakeSingleNews,
     fakeSingleNews,
     fakeSingleNews,
@@ -274,7 +289,7 @@ private val fakeSearchSingle = newBeeSearchSingle(
     body = " 最终决战天幕魔导城 2.0 主线最后一个副本，冒险者变成大英雄的开端，副本主旨是，一路狂奔。事后西德会把副本里乘坐的魔导机甲送给玩家 (哦副本本身就是跑路 MAX……)。中途尽量不要死，不吃技能就不",
 )
 
-private val fakeSearchList = listOf<newBeeSearchSingle>(
+private val fakeSearchList = listOf(
     fakeSearchSingle,
     fakeSearchSingle,
     fakeSearchSingle,

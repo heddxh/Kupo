@@ -7,25 +7,34 @@ import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
 import io.ktor.http.HttpHeaders
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.MissingFieldException
 import kotlinx.serialization.json.Json
 
 class SearchServiceImpl(
     private val client: HttpClient
 ) : SearchService {
 
-    override suspend fun getSearch(): List<newBeeSearchSingle> {
+    @OptIn(ExperimentalSerializationApi::class)
+    override suspend fun getSearch(query: String): List<newBeeSearchSingle> {
         val BASE_URL = "https://novice-network-search.wakingsands.com/s"
         val response = client.get(BASE_URL) {
             headers {
                 append(HttpHeaders.AcceptEncoding, "gzip")
             }
             url {
-                parameters.append("word", "1")
+                parameters.append("word", query)
                 parameters.append("pn", "1")
                 parameters.append("ps", "10")
             }
         }
-        val bodyStr: String = response.body()
-        return Json.decodeFromString<newBeeSearch>(bodyStr).results
+        val body: String = response.body()
+        return try {
+            Json.decodeFromString<newBeeSearch>(body).results
+        }
+        catch (e: MissingFieldException){
+            println(body)
+            emptyList()
+        }
     }
 }
