@@ -1,4 +1,4 @@
-package com.heddxh.kupo.remote.dto
+package com.heddxh.kupo.network.DTO
 
 import kotlinx.serialization.Serializable
 
@@ -15,11 +15,4 @@ data class newBeeSearchSingle(
     val url: String,
     val title: String,
     val body: String,
-    val highlights: newBeeSearchSingleHighlight = newBeeSearchSingleHighlight(listOf("123"), listOf("123"))
-)
-
-@Serializable
-data class newBeeSearchSingleHighlight(
-    val title: List<String> = listOf("123"),
-    val body: List<String> = listOf("123")
 )
