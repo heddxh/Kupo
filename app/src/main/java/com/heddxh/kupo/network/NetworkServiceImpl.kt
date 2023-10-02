@@ -15,33 +15,6 @@ import kotlinx.serialization.json.Json
 private const val NEWS_LIST_URL = "https://cqnews.web.sdo.com/api/news/newsList"
 private const val SEARCH_BEGINNER_URL = "https://novice-network-search.wakingsands.com/s"
 
-
-private fun cleanNewsData(responseString: String): List<News> {
-    val dirtyIndexStart = responseString.indexOf('(')
-    val dirtyIndexEnd = responseString.lastIndexOf(')')
-    val rawBodyData = Json.decodeFromString<RawBodyClass>(
-            responseString.substring(dirtyIndexStart + 1, dirtyIndexEnd)
-    )
-    return rawDataToNews(rawBodyData.Data)
-}
-
-private fun rawDataToNews(rawData: List<NewsData>): List<News> {
-    val newsList: MutableList<News> = mutableListOf()
-    for (item in rawData) { //TODO: MAP?
-        newsList.add(
-                News(
-                        link = item.Author,
-                        homeImagePath = item.HomeImagePath,
-                        publishDate = item.PublishDate,
-                        sortIndex = item.SortIndex,
-                        summary = item.Summary,
-                        title = item.Title
-                )
-        )
-    }
-    return newsList
-}
-
 class NetworkServiceImpl(private val client: HttpClient) : NetworkService {
 
     override suspend fun getNews(): List<News> {
@@ -73,4 +46,31 @@ class NetworkServiceImpl(private val client: HttpClient) : NetworkService {
         }
         return response.body<newBeeSearch>().results
     }
+}
+
+
+private fun cleanNewsData(responseString: String): List<News> {
+    val dirtyIndexStart = responseString.indexOf('(')
+    val dirtyIndexEnd = responseString.lastIndexOf(')')
+    val rawBodyData = Json.decodeFromString<RawBodyClass>(
+        responseString.substring(dirtyIndexStart + 1, dirtyIndexEnd)
+    )
+    return rawDataToNews(rawBodyData.Data)
+}
+
+private fun rawDataToNews(rawData: List<NewsData>): List<News> {
+    val newsList: MutableList<News> = mutableListOf()
+    for (item in rawData) { //TODO: MAP?
+        newsList.add(
+            News(
+                link = item.Author,
+                homeImagePath = item.HomeImagePath,
+                publishDate = item.PublishDate,
+                sortIndex = item.SortIndex,
+                summary = item.Summary,
+                title = item.Title
+            )
+        )
+    }
+    return newsList
 }

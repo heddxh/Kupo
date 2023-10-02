@@ -33,6 +33,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.heddxh.kupo.R
 import com.heddxh.kupo.network.DTO.News
+import com.heddxh.kupo.ui.components.Quest
+import com.heddxh.kupo.ui.components.QuestProgress
 import com.heddxh.kupo.ui.theme.KupoTheme
 
 
@@ -47,7 +49,7 @@ fun HomeScreen(
         homeViewModel.updateNews()
     }
     BoxWithConstraints(
-            modifier = modifier.fillMaxSize()
+        modifier = modifier.fillMaxSize(),
     ) {
         SearchBar(
                 query = homeUiState.searchQuery,
@@ -62,64 +64,74 @@ fun HomeScreen(
                     }
                 },
                 modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .widthIn(min = maxWidth - 32.dp)
+                    .align(Alignment.TopCenter)
+                    .widthIn(min = maxWidth - 32.dp)
         ) {
-            LazyColumn() {
+            LazyColumn {
                 items(homeUiState.searchResult) {
                     Text(it.title)
                 }
             }
 
         }
-        NewsList(
-                newsList = homeUiState.newsList,
-                modifier = modifier.padding(horizontal = 16.dp)
+        HomeList(
+            newsList = homeUiState.newsList,
+            quest = homeUiState.quest,
+            onDrag = { homeViewModel.progressDrag(it) },
+            modifier = modifier.padding(horizontal = 16.dp)
         )
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NewsList(newsList: List<News>, modifier: Modifier = Modifier) {
+fun HomeList(
+    newsList: List<News>,
+    quest: Quest,
+    onDrag: (Float) -> Unit,
+    modifier: Modifier = Modifier
+) {
     LazyColumn(
-            modifier = modifier,
-            contentPadding = PaddingValues(top = 80.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+        modifier = modifier,
+        contentPadding = PaddingValues(top = 150.dp),//TODO: 确定与上边界距离
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        item {
+            QuestProgress(quest = quest, modifier = Modifier.fillMaxWidth(), onDrag = onDrag)
+        }
         items(newsList) {
             val context = LocalContext.current
             Card(
-                    onClick = {
-                        val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse(it.link))
-                        context.startActivity(webIntent)
-                    }
+                onClick = {
+                    val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse(it.link))
+                    context.startActivity(webIntent)
+                }
             ) {
                 if (LocalInspectionMode.current) {
                     Image(
-                            painterResource(id = R.drawable.test),
-                            contentDescription = null,
-                            modifier = Modifier.fillMaxWidth(),
-                            contentScale = ContentScale.Crop
+                        painterResource(id = R.drawable.test),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxWidth(),
+                        contentScale = ContentScale.Crop
                     )
                 } else {
                     AsyncImage(
-                            model = it.homeImagePath,
-                            contentDescription = it.title,
-                            modifier = Modifier.fillMaxWidth(),
-                            contentScale = ContentScale.Crop
+                        model = it.homeImagePath,
+                        contentDescription = it.title,
+                        modifier = Modifier.fillMaxWidth(),
+                        contentScale = ContentScale.Crop
                     )
                 }
                 val textModifier = Modifier.padding(horizontal = 16.dp)
                 Text(
-                        text = it.title,
-                        modifier = textModifier,
-                        style = MaterialTheme.typography.headlineSmall
+                    text = it.title,
+                    modifier = textModifier,
+                    style = MaterialTheme.typography.headlineSmall
                 )
                 Text(
-                        text = it.summary,
-                        modifier = textModifier,
-                        style = MaterialTheme.typography.bodyLarge
+                    text = it.summary,
+                    modifier = textModifier,
+                    style = MaterialTheme.typography.bodyLarge
                 )
             }
         }
@@ -130,35 +142,36 @@ fun NewsList(newsList: List<News>, modifier: Modifier = Modifier) {
 @Composable
 fun NewsListPreview() {
     KupoTheme {
-        NewsList(newsList = fakeNewsList)
+        HomeList(quest = Quest(), newsList = fakeNewsList, onDrag = {})
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreenFake(
-        modifier: Modifier = Modifier,
-        homeUiState: HomeUiState = HomeUiState(false, fakeNewsList),
+    modifier: Modifier = Modifier,
+    homeUiState: HomeUiState = HomeUiState(newsList = fakeNewsList, searchViewEnable = false),
 ) {
     BoxWithConstraints(
             modifier.fillMaxSize(),
             contentAlignment = Alignment.TopCenter
     ) {
         SearchBar(
-                query = homeUiState.searchQuery,
-                onQueryChange = { },
-                onSearch = { },
-                active = homeUiState.searchViewEnable,
-                onActiveChange = {},
-                modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .widthIn(min = maxWidth - 32.dp)
+            query = homeUiState.searchQuery,
+            onQueryChange = { },
+            onSearch = { },
+            active = homeUiState.searchViewEnable,
+            onActiveChange = {},
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .widthIn(min = maxWidth - 32.dp)
         ) {
-            //TODO: SEARCH
         }
-        NewsList(
-                newsList = homeUiState.newsList,
-                modifier = modifier.padding(horizontal = 16.dp)
+        HomeList(
+            newsList = homeUiState.newsList,
+            quest = Quest(),
+            onDrag = {},
+            modifier = modifier.padding(horizontal = 16.dp)
         )
     }
 }

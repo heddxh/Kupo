@@ -80,6 +80,4 @@ dependencies {
     implementation("io.ktor:ktor-serialization-kotlinx-json:$ktor_version")
 
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
-
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
 }

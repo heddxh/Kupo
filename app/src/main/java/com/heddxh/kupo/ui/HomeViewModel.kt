@@ -1,5 +1,6 @@
 package com.heddxh.kupo.ui
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.heddxh.kupo.network.NetworkService
@@ -31,13 +32,25 @@ class HomeViewModel : ViewModel() {
             }
             _uiState.update { currentState ->
                 currentState.copy(
-                        searchViewEnable = true,
-                        searchQuery = query,
+                    searchViewEnable = true,
+                    searchQuery = query,
                 )
             }
         } else {
             _uiState.update {
                 it.copy(searchViewEnable = false, searchQuery = "库啵！")
+            }
+        }
+    }
+
+    fun progressDrag(offset: Float) {
+        //TODO: 动画以及方向修正，不要让进度条超出范围
+        Log.d("HomeViewModel", "progressDrag: $offset")
+        _uiState.update {
+            if (offset > 100) {
+                it.copy(quest = it.quest.copy(progress = it.quest.progress - .05f))
+            } else {
+                it.copy(quest = it.quest.copy(progress = it.quest.progress + .05f))
             }
         }
     }
