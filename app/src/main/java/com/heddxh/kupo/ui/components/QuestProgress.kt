@@ -29,6 +29,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.heddxh.kupo.R
+import com.heddxh.kupo.ui.Quest
 import com.heddxh.kupo.ui.theme.KupoTheme
 
 @Composable
@@ -94,13 +95,6 @@ fun QuestProgress(quest: Quest, modifier: Modifier = Modifier, onDrag: (Float) -
         )
     }
 }
-
-data class Quest(
-    val version: String = "5.0",
-    val title: String = "地面冷若冰霜，天空遥不可及",
-    val progress: Float = .5f,
-    val versionTitle: String = "暗影之逆焰主线任务",
-)
 
 @Preview
 @Composable

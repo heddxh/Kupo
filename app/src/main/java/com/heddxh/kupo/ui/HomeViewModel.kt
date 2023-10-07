@@ -3,6 +3,7 @@ package com.heddxh.kupo.ui
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.heddxh.kupo.data.QuestsRepository
 import com.heddxh.kupo.network.NetworkService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -10,13 +11,23 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class HomeViewModel : ViewModel() {
+class HomeViewModel(private val questsRepository: QuestsRepository) : ViewModel() {
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     private val networkService = NetworkService.create()
 
-    suspend fun updateNews() {
+    init {
+        val scope = viewModelScope
+        scope.launch {
+            networkService.downloadQuestsDatabase(questsRepository)
+        }
+        scope.launch {
+            updateNews()
+        }
+    }
+
+    private suspend fun updateNews() {
         _uiState.update { currentState ->
             currentState.copy(newsList = networkService.getNews())
         }

@@ -1,53 +1,37 @@
 package com.heddxh.kupo.ui
 
-import android.content.Intent
-import android.net.Uri
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalInspectionMode
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.AsyncImage
-import com.heddxh.kupo.R
-import com.heddxh.kupo.network.DTO.News
-import com.heddxh.kupo.ui.components.Quest
-import com.heddxh.kupo.ui.components.QuestProgress
+import com.heddxh.kupo.data.OfflineQuestsItemsRepository
+import com.heddxh.kupo.data.QuestsDB
+import com.heddxh.kupo.network.dto.News
+import com.heddxh.kupo.ui.components.HomeList
 import com.heddxh.kupo.ui.theme.KupoTheme
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-        modifier: Modifier = Modifier,
-        homeViewModel: HomeViewModel = viewModel(),
+    modifier: Modifier = Modifier,
+    db: QuestsDB = QuestsDB.getDatabase(LocalContext.current),
+    homeViewModel: HomeViewModel = HomeViewModel(OfflineQuestsItemsRepository(db.itemDao())),
 ) {
     val homeUiState by homeViewModel.uiState.collectAsState()
-    LaunchedEffect(homeUiState) {
-        homeViewModel.updateNews()
-    }
     BoxWithConstraints(
         modifier = modifier.fillMaxSize(),
     ) {
@@ -83,60 +67,6 @@ fun HomeScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun HomeList(
-    newsList: List<News>,
-    quest: Quest,
-    onDrag: (Float) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    LazyColumn(
-        modifier = modifier,
-        contentPadding = PaddingValues(top = 150.dp),//TODO: 确定与上边界距离
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        item {
-            QuestProgress(quest = quest, modifier = Modifier.fillMaxWidth(), onDrag = onDrag)
-        }
-        items(newsList) {
-            val context = LocalContext.current
-            Card(
-                onClick = {
-                    val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse(it.link))
-                    context.startActivity(webIntent)
-                }
-            ) {
-                if (LocalInspectionMode.current) {
-                    Image(
-                        painterResource(id = R.drawable.test),
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxWidth(),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    AsyncImage(
-                        model = it.homeImagePath,
-                        contentDescription = it.title,
-                        modifier = Modifier.fillMaxWidth(),
-                        contentScale = ContentScale.Crop
-                    )
-                }
-                val textModifier = Modifier.padding(horizontal = 16.dp)
-                Text(
-                    text = it.title,
-                    modifier = textModifier,
-                    style = MaterialTheme.typography.headlineSmall
-                )
-                Text(
-                    text = it.summary,
-                    modifier = textModifier,
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            }
-        }
-    }
-}
 
 @Preview
 @Composable

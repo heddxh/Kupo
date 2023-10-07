@@ -1,8 +1,7 @@
 package com.heddxh.kupo.ui
 
-import com.heddxh.kupo.network.DTO.News
-import com.heddxh.kupo.network.DTO.newBeeSearchSingle
-import com.heddxh.kupo.ui.components.Quest
+import com.heddxh.kupo.network.dto.News
+import com.heddxh.kupo.network.dto.newBeeSearchSingle
 
 data class HomeUiState(
         //News
@@ -13,4 +12,11 @@ data class HomeUiState(
         val searchResult: List<newBeeSearchSingle> = emptyList(),
         //Quest
         val quest: Quest = Quest(),
+)
+
+data class Quest(
+    val version: String = "5.0",
+    val title: String = "地面冷若冰霜，天空遥不可及",
+    val progress: Float = .5f,
+    val versionTitle: String = "暗影之逆焰主线任务",
 )
