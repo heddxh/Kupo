@@ -22,7 +22,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.heddxh.kupo.R
-import com.heddxh.kupo.network.dto.News
+import com.heddxh.kupo.network.model.News
 import com.heddxh.kupo.ui.Quest
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -31,11 +31,12 @@ fun HomeList(
     newsList: List<News>,
     quest: Quest,
     onDrag: (Float) -> Unit,
+    contentPadding: PaddingValues,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
         modifier = modifier,
-        contentPadding = PaddingValues(top = 160.dp),//TODO: 确定与上边界距离
+        contentPadding = contentPadding,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {

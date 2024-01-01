@@ -1,4 +1,4 @@
-package com.heddxh.kupo.network.dto
+package com.heddxh.kupo.network.model
 
 import kotlinx.serialization.Serializable
 

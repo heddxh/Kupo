@@ -4,7 +4,6 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface QuestItemDao {
@@ -13,9 +12,13 @@ interface QuestItemDao {
     suspend fun insert(questItem: QuestItem)
 
     @Query("SELECT * from quests WHERE id = :id")
-    fun getItem(id: Int): Flow<QuestItem>
+    fun getItem(id: Int): QuestItem
 
-    @Query("SELECT * from quests ORDER BY name ASC")
-    fun getAllItems(): Flow<List<QuestItem>>
+    @Query("SELECT * from quests ORDER BY id ASC")
+    fun getAllItems(): List<QuestItem>
+
+    //获取表长度
+    @Query("SELECT COUNT(*) FROM quests")
+    suspend fun getCurrentCount(): Int
 
 }

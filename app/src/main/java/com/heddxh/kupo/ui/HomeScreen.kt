@@ -14,42 +14,41 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.heddxh.kupo.data.OfflineQuestsItemsRepository
-import com.heddxh.kupo.data.QuestsDB
-import com.heddxh.kupo.network.dto.News
-import com.heddxh.kupo.ui.components.HomeList
-import com.heddxh.kupo.ui.theme.KupoTheme
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.heddxh.kupo.data.FakeNewsRepository
+import com.heddxh.kupo.data.FakeQuestRepository
+import com.heddxh.kupo.network.FakeNetworkService
+import com.heddxh.kupo.ui.components.NewsCarousel
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    db: QuestsDB = QuestsDB.getDatabase(LocalContext.current),
-    homeViewModel: HomeViewModel = HomeViewModel(OfflineQuestsItemsRepository(db.itemDao())),
+    homeViewModel: HomeViewModel = viewModel()
 ) {
     val homeUiState by homeViewModel.uiState.collectAsState()
+
     BoxWithConstraints(
         modifier = modifier.fillMaxSize(),
     ) {
         SearchBar(
-                query = homeUiState.searchQuery,
-                onQueryChange = { homeViewModel.search(it, true) },
-                onSearch = { },
-                active = homeUiState.searchViewEnable,
-                onActiveChange = {
-                    if (!it) {
-                        homeViewModel.search(active = false)
-                    } else {
-                        homeViewModel.search("", true)
-                    }
-                },
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .widthIn(min = maxWidth - 32.dp)
+            query = homeUiState.searchQuery,
+            onQueryChange = { homeViewModel.search(it, true) },
+            onSearch = { },
+            active = homeUiState.searchViewEnable,
+            onActiveChange = {
+                if (!it) {
+                    homeViewModel.search(active = false)
+                } else {
+                    homeViewModel.search("", true)
+                }
+            },
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .widthIn(min = maxWidth - 32.dp)
         ) {
             LazyColumn {
                 items(homeUiState.searchResult) {
@@ -58,79 +57,37 @@ fun HomeScreen(
             }
 
         }
-        HomeList(
+        NewsCarousel(
+            cards = homeUiState.newsList,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 64.dp)
+        )
+        /*HomeList(
             newsList = homeUiState.newsList,
             quest = homeUiState.quest,
             onDrag = { homeViewModel.progressDrag(it) },
+            contentPadding = PaddingValues(
+                top = (WindowInsets //FIXME: 非硬编码方式显示在搜索栏下方
+                    .statusBars
+                    .getTop(LocalDensity.current)
+                    .dp) + 32.dp
+            ),
             modifier = modifier.padding(horizontal = 16.dp)
-        )
+        )*/
     }
 }
-
 
 @Preview
 @Composable
-fun NewsListPreview() {
-    KupoTheme {
-        HomeList(quest = Quest(), newsList = fakeNewsList, onDrag = {})
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun HomeScreenFake(
-    modifier: Modifier = Modifier,
-    homeUiState: HomeUiState = HomeUiState(newsList = fakeNewsList, searchViewEnable = false),
-) {
-    BoxWithConstraints(
-            modifier.fillMaxSize(),
-            contentAlignment = Alignment.TopCenter
-    ) {
-        SearchBar(
-            query = homeUiState.searchQuery,
-            onQueryChange = { },
-            onSearch = { },
-            active = homeUiState.searchViewEnable,
-            onActiveChange = {},
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .widthIn(min = maxWidth - 32.dp)
-        ) {
-        }
-        HomeList(
-            newsList = homeUiState.newsList,
-            quest = Quest(),
-            onDrag = {},
-            modifier = modifier.padding(horizontal = 16.dp)
-        )
-    }
-}
-
-@Preview(device = "id:pixel_4_xl", showBackground = true)
-@Composable
 fun HomeScreenPreview() {
-    KupoTheme {
-        HomeScreenFake()
-    }
+    HomeScreen(
+        homeViewModel = HomeViewModel(
+            FakeNetworkService(),
+            FakeQuestRepository(),
+            FakeNewsRepository()
+        )
+    )
 }
-
-private val fakeSingleNews = News(
-        link = "https://ff.web.sdo.com/web8/index.html#/newstab/newscont/352734",
-        homeImagePath = "https://fu5.web.sdo.com/10036/202308/16922658666728.jpg",
-        publishDate = "2023/08/18 10:59:40",
-        sortIndex = 10,
-        summary = "最终幻想14将于9月9日-9月10日参展北京核聚变2023！",
-        title = "9/9-9/10 《最终幻想14》参展北京核聚变2023！"
-)
-
-private val fakeNewsList = listOf(
-        fakeSingleNews,
-        fakeSingleNews,
-        fakeSingleNews,
-        fakeSingleNews,
-        fakeSingleNews,
-        fakeSingleNews
-)
-
 
 
