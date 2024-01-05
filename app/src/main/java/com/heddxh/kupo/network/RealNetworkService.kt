@@ -1,5 +1,8 @@
+@file:Suppress("SpellCheckingInspection")
+
 package com.heddxh.kupo.network
 
+import android.util.Log
 import com.heddxh.kupo.data.QuestItem
 import com.heddxh.kupo.data.QuestsRepository
 import com.heddxh.kupo.network.model.News
@@ -26,37 +29,53 @@ class RealNetworkService : NetworkService {
     private val client = NetworkClient.client
 
     override suspend fun getNews(): List<News> {
-        val response = client.get(NEWS_LIST_URL) {
-            headers {
-                append(HttpHeaders.Accept, "text/html")
+        try {
+            val response = client.get(NEWS_LIST_URL) {
+                headers {
+                    append(HttpHeaders.Accept, "text/html")
+                }
+                url {
+                    parameters.append("gameCode", "ff")
+                    parameters.append("CategoryCode", "5309,5310,5311,5312,5313")
+                    parameters.append("pageIndex", "0")
+                    parameters.append("pageSize", "5")
+                    parameters.append("callback", "_jsonp14nht6cminm")
+                }
             }
-            url {
-                parameters.append("gameCode", "ff")
-                parameters.append("CategoryCode", "5309,5310,5311,5312,5313")
-                parameters.append("pageIndex", "0")
-                parameters.append("pageSize", "5")
-                parameters.append("callback", "_jsonp14nht6cminm")
-            }
+            return cleanNewsData(response.body())
+        } catch (e: Exception) {
+            // Handle network error here.
+            Log.e("getNews", e.localizedMessage?.toString() ?: "")
+            return emptyList()
         }
-        return cleanNewsData(response.body())
     }
 
     override suspend fun search(query: String): List<newBeeSearchSingle> {
-        val response = client.get(SEARCH_BEGINNER_URL) {
-            headers {
-                append(HttpHeaders.AcceptEncoding, "gzip")
+        try {
+            val response = client.get(SEARCH_BEGINNER_URL) {
+                headers {
+                    append(HttpHeaders.AcceptEncoding, "gzip")
+                }
+                url {
+                    parameters.append("word", query)
+                    parameters.append("pn", "1")
+                    parameters.append("ps", "10")
+                }
             }
-            url {
-                parameters.append("word", query)
-                parameters.append("pn", "1")
-                parameters.append("ps", "10")
-            }
+            return response.body<newBeeSearch>().results
+        } catch (e: Exception) {
+            Log.e("search", e.localizedMessage?.toString() ?: "")
+            return emptyList()
         }
-        return response.body<newBeeSearch>().results
     }
 
     override suspend fun downloadQuestsData(questsRepository: QuestsRepository) {
-        val response = client.get("$WIKI_URL/${versionMap["5.0"]}")
+        val response = try {
+            client.get("$WIKI_URL/${versionMap["5.0"]}")
+        } catch (e: Exception) {
+            Log.e("downloadQuestsData", e.localizedMessage?.toString() ?: "")
+            return
+        }
         val doc = Jsoup.parse(response.body<String>())
         val rows = doc
             .select(".wikitable > tbody:nth-child(1)")

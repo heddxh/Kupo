@@ -24,15 +24,12 @@ class HomeViewModel(
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
-    //private val questsRepository = QuestsRepository(DataDB.getDatabase(context).questItemDao())
-    //private val newsRepository = NewsRepository(DataDB.getDatabase(context).newsDao())
-
     init {
         val ioScope = CoroutineScope(Dispatchers.IO)
         ioScope.launch {
             val currentCount = questsRepository.getCurrentCount()
             if (currentCount == 0) {
-                Log.d("HomeViewModel", "Need to download")
+                Log.d("HomeViewModel", "Quests need to download")
                 networkService.downloadQuestsData(questsRepository)
             } else {
                 Log.d("HomeViewModel", "init: $currentCount, don't need to download")
@@ -40,6 +37,9 @@ class HomeViewModel(
             val questsItems = questsRepository.getAllItems()
             val count = questsItems.size
             val quests = mutableListOf<Quest>()
+            if (count == 0) {
+                Log.e("HomeViewModel", "Can't get quests")
+            }
             for (item in questsItems) {
                 quests.add(
                     Quest(
@@ -54,37 +54,39 @@ class HomeViewModel(
             }
         }
         ioScope.launch {
-            val newsItems = newsRepository.getAllItems()
             val newsList = mutableListOf<News>()
-            if (newsItems.isEmpty()) { //FIXME: 判断新闻更新时机
-                Log.d("HomeViewModel", "Need to download")
-                networkService.getNews().forEach {
-                    newsList.add(it)
-                    newsRepository.insert(
-                        NewsItem(
-                            link = it.link,
-                            homeImagePath = it.homeImagePath,
-                            publishDate = it.publishDate,
-                            sortIndex = it.sortIndex,
-                            summary = it.summary,
-                            title = it.title
+            // Fixme: If network is quick, newsList will flash because of recomposition
+            Log.d("HomeViewModel", "Getting News...")
+            networkService.getNews().apply {
+                if (this.isNotEmpty()) {
+                    this.forEach {
+                        newsList.add(it)
+                        newsRepository.insert(
+                            NewsItem(
+                                link = it.link,
+                                homeImagePath = it.homeImagePath,
+                                publishDate = it.publishDate,
+                                sortIndex = it.sortIndex,
+                                summary = it.summary,
+                                title = it.title
+                            )
                         )
-                    )
-                }
-            } else {
-                newsItems.forEach {
-                    newsList.add(
-                        News(
-                            link = it.link,
-                            homeImagePath = it.homeImagePath,
-                            publishDate = it.publishDate,
-                            sortIndex = it.sortIndex,
-                            summary = it.summary,
-                            title = it.title
+                    }
+                } else {
+                    Log.e("HomeViewModel", "Can't fetch latest news, use local instead")
+                    newsRepository.getAllItems().forEach {
+                        newsList.add(
+                            News(
+                                link = it.link,
+                                homeImagePath = it.homeImagePath,
+                                publishDate = it.publishDate,
+                                sortIndex = it.sortIndex,
+                                summary = it.summary,
+                                title = it.title
+                            )
                         )
-                    )
+                    }
                 }
-                Log.d("HomeViewModel", "init: ${newsItems.size}, don't need to download")
             }
             _uiState.update { currentState ->
                 currentState.copy(newsList = newsList)
@@ -114,14 +116,17 @@ class HomeViewModel(
     }
 
     fun progressDrag(offset: Float) {
-        //FIXME: 更好的滑动控制
+        if (_uiState.value.quests.isEmpty()) {
+            Log.e("HomeViewModel", "Quests are empty, disable drag")
+            return
+        }
         val currentID = _uiState.value.quest.id
         Log.d("HomeViewModel", "current ID: $currentID, offset: $offset")
         _uiState.update {
-            if ((offset < -200) and (currentID > 0)) {
+            if ((offset < 0) and (currentID > 0)) {
                 // 向左
                 it.copy(quest = it.quests[currentID - 2])// 修正下标与ID的偏移
-            } else if ((offset > 200) and (currentID < it.quests.size)) {
+            } else if ((offset > 0) and (currentID < it.quests.size)) {
                 // 向右
                 it.copy(quest = it.quests[currentID + 1])
             } else {
