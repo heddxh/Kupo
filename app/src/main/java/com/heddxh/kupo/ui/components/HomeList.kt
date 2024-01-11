@@ -23,7 +23,8 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.heddxh.kupo.R
 import com.heddxh.kupo.network.model.News
-import com.heddxh.kupo.ui.Quest
+import com.heddxh.kupo.ui.home.Quest
+import com.heddxh.kupo.ui.home.QuestProgress
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

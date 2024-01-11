@@ -1,4 +1,4 @@
-package com.heddxh.kupo.ui.components
+package com.heddxh.kupo.ui.home
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseOutBounce
@@ -31,7 +31,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.heddxh.kupo.R
-import com.heddxh.kupo.ui.Quest
 import com.heddxh.kupo.ui.theme.KupoTheme
 
 @Composable

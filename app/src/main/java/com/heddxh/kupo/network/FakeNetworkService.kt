@@ -2,7 +2,7 @@ package com.heddxh.kupo.network
 
 import com.heddxh.kupo.data.QuestsRepository
 import com.heddxh.kupo.network.model.News
-import com.heddxh.kupo.network.model.newBeeSearchSingle
+import com.heddxh.kupo.network.model.SearchResult
 
 class FakeNetworkService : NetworkService {
     override suspend fun getNews(): List<News> {
@@ -20,7 +20,10 @@ class FakeNetworkService : NetworkService {
         TODO("Not yet implemented")
     }
 
-    override suspend fun search(query: String): List<newBeeSearchSingle> {
+    override suspend fun search(
+        query: String,
+        providers: List<SearchProvider>
+    ): List<SearchResult> {
         TODO("Not yet implemented")
     }
 }

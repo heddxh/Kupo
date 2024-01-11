@@ -28,7 +28,16 @@ data class NewsData(
     @SerialName("Summary") val summary: String,
     @SerialName("Title") val title: String,
     @SerialName("TitleClass") val titleClass: String
-)
+) {
+    fun toNews() = News(
+        link = author,
+        homeImagePath = homeImagePath,
+        publishDate = publishDate,
+        sortIndex = sortIndex,
+        summary = summary,
+        title = title
+    )
+}
 
 @Serializable
 data class RawBodyClass(

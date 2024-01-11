@@ -6,20 +6,19 @@ import android.util.Log
 import com.heddxh.kupo.data.QuestItem
 import com.heddxh.kupo.data.QuestsRepository
 import com.heddxh.kupo.network.model.News
-import com.heddxh.kupo.network.model.NewsData
 import com.heddxh.kupo.network.model.RawBodyClass
-import com.heddxh.kupo.network.model.newBeeSearch
-import com.heddxh.kupo.network.model.newBeeSearchSingle
+import com.heddxh.kupo.network.model.SearchResult
 import io.ktor.client.call.body
-import io.ktor.client.request.get
-import io.ktor.client.request.headers
+import io.ktor.client.plugins.resources.get
 import io.ktor.http.HttpHeaders
+import io.ktor.http.URLProtocol
+import io.ktor.http.headers
+import io.ktor.resources.Resource
 import kotlinx.serialization.json.Json
 import org.jsoup.Jsoup
 
-private const val NEWS_LIST_URL = "https://cqnews.web.sdo.com/api/news/newsList"
-private const val SEARCH_BEGINNER_URL = "https://novice-network-search.wakingsands.com/s"
-private const val WIKI_URL = "https://ff14.huijiwiki.com/wiki"
+private const val NEWS_LIST_URL = "cqnews.web.sdo.com"
+private const val WIKI_URL = "ff14.huijiwiki.com"
 private val versionMap = mapOf(
     "5.0" to "暗影之逆焰主线任务",
     "6.0" to "晓月之终途主线任务"
@@ -30,7 +29,11 @@ class RealNetworkService : NetworkService {
 
     override suspend fun getNews(): List<News> {
         try {
-            val response = client.get(NEWS_LIST_URL) {
+            val response = client.get(NewsRes()) {
+                url {
+                    protocol = URLProtocol.HTTPS
+                    host = NEWS_LIST_URL
+                }
                 headers {
                     append(HttpHeaders.Accept, "text/html")
                 }
@@ -39,7 +42,7 @@ class RealNetworkService : NetworkService {
                     parameters.append("CategoryCode", "5309,5310,5311,5312,5313")
                     parameters.append("pageIndex", "0")
                     parameters.append("pageSize", "5")
-                    parameters.append("callback", "_jsonp14nht6cminm")
+                    parameters.append("callback", "data")
                 }
             }
             return cleanNewsData(response.body())
@@ -50,28 +53,14 @@ class RealNetworkService : NetworkService {
         }
     }
 
-    override suspend fun search(query: String): List<newBeeSearchSingle> {
-        try {
-            val response = client.get(SEARCH_BEGINNER_URL) {
-                headers {
-                    append(HttpHeaders.AcceptEncoding, "gzip")
-                }
-                url {
-                    parameters.append("word", query)
-                    parameters.append("pn", "1")
-                    parameters.append("ps", "10")
-                }
-            }
-            return response.body<newBeeSearch>().results
-        } catch (e: Exception) {
-            Log.e("search", e.localizedMessage?.toString() ?: "")
-            return emptyList()
-        }
-    }
-
     override suspend fun downloadQuestsData(questsRepository: QuestsRepository) {
         val response = try {
-            client.get("$WIKI_URL/${versionMap["5.0"]}")
+            client.get(WikiRes.WikiQuestsRes(version = "${versionMap["5.0"]}")) {
+                url {
+                    protocol = URLProtocol.HTTPS
+                    host = WIKI_URL
+                }
+            }
         } catch (e: Exception) {
             Log.e("downloadQuestsData", e.localizedMessage?.toString() ?: "")
             return
@@ -89,30 +78,39 @@ class RealNetworkService : NetworkService {
             questsRepository.insertItem(QuestItem(name = quest))
         }
     }
+
+    override suspend fun search(
+        query: String,
+        providers: List<SearchProvider>
+    ): List<SearchResult> {
+        // TODO: 各个 SearchProvider 返回结果权重
+        val results = mutableListOf<SearchResult>()
+        providers.forEach { results += it(query) }
+        return results
+    }
 }
 
+/**
+ * Clean newslist response.
+ * @param responseString jsonp which start which looks like:
+ * ```Jsonp
+ * data({ MY JSON DATA })
+ * ```
+ */
 private fun cleanNewsData(responseString: String): List<News> {
     val dirtyIndexStart = responseString.indexOf('(')
     val dirtyIndexEnd = responseString.lastIndexOf(')')
     val rawBodyData = Json.decodeFromString<RawBodyClass>(
         responseString.substring(dirtyIndexStart + 1, dirtyIndexEnd)
     )
-    return rawDataToNews(rawBodyData.data)
+    return rawBodyData.data.map { it.toNews() }
 }
 
-private fun rawDataToNews(rawData: List<NewsData>): List<News> {
-    val newsList: MutableList<News> = mutableListOf()
-    for (item in rawData) { //TODO: MAP?
-        newsList.add(
-            News(
-                link = item.author,
-                homeImagePath = item.homeImagePath,
-                publishDate = item.publishDate,
-                sortIndex = item.sortIndex,
-                summary = item.summary,
-                title = item.title
-            )
-        )
-    }
-    return newsList
+@Resource("/api/news/newsList")
+class NewsRes
+
+@Resource("/wiki")
+class WikiRes {
+    @Resource("{version}")
+    class WikiQuestsRes(val parent: WikiRes = WikiRes(), val version: String)
 }

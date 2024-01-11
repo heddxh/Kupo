@@ -1,4 +1,4 @@
-package com.heddxh.kupo.ui.components
+package com.heddxh.kupo.ui.home
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -24,13 +24,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import coil.compose.SubcomposeAsyncImage
-import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.heddxh.kupo.R
 import com.heddxh.kupo.network.model.News
@@ -75,8 +75,9 @@ fun NewsCarousel(cards: List<News>, modifier: Modifier = Modifier) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NewsCard(data: News, modifier: Modifier = Modifier) {
+    val urlHandler = LocalUriHandler.current
     Card(
-        onClick = {}, modifier = modifier
+        onClick = { urlHandler.openUri(data.link) }, modifier = modifier
     ) {
         if (LocalInspectionMode.current) {
             Image(
@@ -89,8 +90,6 @@ fun NewsCard(data: News, modifier: Modifier = Modifier) {
             val result = ImageRequest.Builder(LocalContext.current)
                 .data(data.homeImagePath)
                 .crossfade(true)
-                .memoryCachePolicy(CachePolicy.DISABLED)
-                .diskCachePolicy(CachePolicy.DISABLED)
                 .build()
             SubcomposeAsyncImage(
                 model = result,

@@ -12,8 +12,8 @@ import com.heddxh.kupo.data.DataDB
 import com.heddxh.kupo.data.RealNewsRepository
 import com.heddxh.kupo.data.RealQuestsRepository
 import com.heddxh.kupo.network.RealNetworkService
-import com.heddxh.kupo.ui.HomeScreen
-import com.heddxh.kupo.ui.HomeViewModel
+import com.heddxh.kupo.ui.home.HomeScreen
+import com.heddxh.kupo.ui.home.HomeViewModel
 import com.heddxh.kupo.ui.theme.KupoTheme
 
 class MainActivity : ComponentActivity() {
