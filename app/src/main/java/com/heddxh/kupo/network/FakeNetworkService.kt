@@ -16,7 +16,7 @@ class FakeNetworkService : NetworkService {
         )
     }
 
-    override suspend fun downloadQuestsData(questsRepository: QuestsRepository) {
+    override suspend fun downloadQuestsData(questsRepository: QuestsRepository, version: String) {
         TODO("Not yet implemented")
     }
 

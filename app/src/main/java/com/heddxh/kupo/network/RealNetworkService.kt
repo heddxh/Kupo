@@ -8,6 +8,7 @@ import com.heddxh.kupo.data.QuestsRepository
 import com.heddxh.kupo.network.model.News
 import com.heddxh.kupo.network.model.RawBodyClass
 import com.heddxh.kupo.network.model.SearchResult
+import com.heddxh.kupo.util.QuestsUtil
 import io.ktor.client.call.body
 import io.ktor.client.plugins.resources.get
 import io.ktor.http.HttpHeaders
@@ -19,10 +20,6 @@ import org.jsoup.Jsoup
 
 private const val NEWS_LIST_URL = "cqnews.web.sdo.com"
 private const val WIKI_URL = "ff14.huijiwiki.com"
-private val versionMap = mapOf(
-    "5.0" to "暗影之逆焰主线任务",
-    "6.0" to "晓月之终途主线任务"
-)
 
 class RealNetworkService : NetworkService {
     private val client = NetworkClient.client
@@ -48,21 +45,26 @@ class RealNetworkService : NetworkService {
             return cleanNewsData(response.body())
         } catch (e: Exception) {
             // Handle network error here.
-            Log.e("getNews", e.localizedMessage?.toString() ?: "")
+            Log.e("getNews", e.message ?: "")
             return emptyList()
         }
     }
 
-    override suspend fun downloadQuestsData(questsRepository: QuestsRepository) {
+    override suspend fun downloadQuestsData(questsRepository: QuestsRepository, version: String) {
+        if (!QuestsUtil.isValidVersion(version)) {
+            // Log and return in advance since the version is invalid.
+            Log.e("NetworkService", "Invalid Version String: $version")
+            return
+        }
         val response = try {
-            client.get(WikiRes.WikiQuestsRes(version = "${versionMap["5.0"]}")) {
+            client.get(WikiRes.WikiQuestsRes(version = QuestsUtil(version).name)) {
                 url {
                     protocol = URLProtocol.HTTPS
                     host = WIKI_URL
                 }
             }
         } catch (e: Exception) {
-            Log.e("downloadQuestsData", e.localizedMessage?.toString() ?: "")
+            Log.e("downloadQuestsData", e.message ?: "")
             return
         }
         val doc = Jsoup.parse(response.body<String>())
@@ -75,7 +77,12 @@ class RealNetworkService : NetworkService {
             val quest = r.getElementsByTag("td")[1].getElementsByTag("a")[0]
                 .attr("title")
                 .drop(3)
-            questsRepository.insertItem(QuestItem(name = quest))
+            questsRepository.insertQuest(
+                QuestItem(
+                    name = quest,
+                    version = version
+                )
+            )
         }
     }
 

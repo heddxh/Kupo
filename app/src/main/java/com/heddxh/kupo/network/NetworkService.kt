@@ -8,7 +8,7 @@ interface NetworkService {
 
     suspend fun getNews(): List<News>
 
-    suspend fun downloadQuestsData(questsRepository: QuestsRepository)
+    suspend fun downloadQuestsData(questsRepository: QuestsRepository, version: String)
 
     suspend fun search(query: String, providers: List<SearchProvider>): List<SearchResult>
 }

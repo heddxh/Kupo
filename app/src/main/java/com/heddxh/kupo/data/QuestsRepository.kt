@@ -1,88 +1,60 @@
 package com.heddxh.kupo.data
 
+import android.util.Log
+import com.heddxh.kupo.util.QuestsUtil
+
 interface QuestsRepository {
-    /**
-     * Retrieve all the items from the the given data source.
-     */
-    fun getAllItems(): List<QuestItem>
 
-    /**
-     * Retrieve an item from the given data source that matches with the [id].
-     */
-    fun getItem(id: Int): QuestItem?
+    suspend fun getAllQuests(): List<QuestItem>
 
-    /**
-     * Insert item in the data source
-     */
-    suspend fun insertItem(questItem: QuestItem)
+    suspend fun getQuestsByVersion(version: String): List<QuestItem>
 
-    suspend fun getCurrentCount(): Int
+    suspend fun insertQuest(questItem: QuestItem)
+
+    suspend fun checkCompletionPerVersion(version: String): Boolean
+
+    suspend fun countByVersion(version: String): Int
+
+    suspend fun getCurrVerRange(version: String): Pair<Int, Int>
 }
 
 class RealQuestsRepository(private val itemDao: QuestItemDao) : QuestsRepository {
 
-    override fun getAllItems(): List<QuestItem> = itemDao.getAllItems()
+    override suspend fun getAllQuests(): List<QuestItem> = itemDao.getAllQuests()
 
-    override fun getItem(id: Int) = itemDao.getItem(id)
-
-    override suspend fun insertItem(questItem: QuestItem) = itemDao.insert(questItem)
-
-    override suspend fun getCurrentCount(): Int = itemDao.getCurrentCount()
-
-}
-
-class FakeQuestRepository : QuestsRepository {
-
-    private val quests = mutableListOf(
-        QuestItem(
-            id = 1,
-            name = "Quest 1",
-        ),
-        QuestItem(
-            id = 2,
-            name = "Quest 2",
-        ),
-        QuestItem(
-            id = 3,
-            name = "Quest 3",
-        ),
-        QuestItem(
-            id = 4,
-            name = "Quest 4",
-        ),
-        QuestItem(
-            id = 5,
-            name = "Quest 5",
-        ),
-        QuestItem(
-            id = 6,
-            name = "Quest 6",
-        ),
-        QuestItem(
-            id = 7,
-            name = "Quest 7",
-        ),
-        QuestItem(
-            id = 8,
-            name = "Quest 8",
-        ),
-        QuestItem(
-            id = 9,
-            name = "Quest 9",
-        ),
-        QuestItem(
-            id = 10,
-            name = "Quest 10",
-        ),
-    )
-
-    override fun getAllItems(): List<QuestItem> = quests
-
-    override fun getItem(id: Int): QuestItem? = quests.find { it.id == id }
-
-    override suspend fun insertItem(questItem: QuestItem) {
-        quests.add(questItem)
+    override suspend fun getQuestsByVersion(version: String): List<QuestItem> {
+        if (QuestsUtil.isValidVersion(version)) {
+            return itemDao.getQuestsFromVersion(version)
+        } else {
+            Log.e("QuestsRepository", "Invalid Version String: $version")
+            return emptyList()
+        }
     }
 
-    override suspend fun getCurrentCount(): Int = quests.size
+    override suspend fun insertQuest(questItem: QuestItem) = itemDao.insert(questItem)
+
+    override suspend fun checkCompletionPerVersion(version: String): Boolean {
+        if (QuestsUtil.isValidVersion(version)) {
+            val count = countByVersion(version)
+            Log.d("QuestsRepository", "Count from repo: $count")
+            Log.d("QuestsRepository", "Count should be: ${QuestsUtil(version).number}")
+            return count == QuestsUtil(version).number
+        } else {
+            Log.e("QuestsRepository", "Invalid Version String: $version")
+            return true
+        }
+    }
+
+    override suspend fun countByVersion(version: String): Int {
+        if (QuestsUtil.isValidVersion(version)) {
+            return itemDao.countFromVersion(version)
+        } else {
+            Log.e("QuestsRepository", "Invalid Version String: $version")
+            return 0
+        }
+    }
+
+    override suspend fun getCurrVerRange(version: String): Pair<Int, Int> {
+        return Pair(itemDao.getVersionFstId(version), itemDao.getVersionLstId(version))
+    }
 }

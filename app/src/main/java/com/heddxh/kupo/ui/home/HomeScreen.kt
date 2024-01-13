@@ -30,12 +30,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.heddxh.kupo.data.FakeNewsRepository
-import com.heddxh.kupo.data.FakeQuestRepository
-import com.heddxh.kupo.network.FakeNetworkService
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
@@ -105,6 +101,7 @@ fun HomeScreen(
             // or when search view enable, they will be squeezed down
             QuestProgress(
                 quest = homeUiState.currentQuest,
+                progress = homeUiState.progress,
                 onDrag = homeViewModel::progressDrag,
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
@@ -115,7 +112,7 @@ fun HomeScreen(
     }
 }
 
-@Preview
+/*@Preview
 @Composable
 fun HomeScreenPreview() {
     HomeScreen(
@@ -123,6 +120,6 @@ fun HomeScreenPreview() {
             FakeNetworkService(), FakeQuestRepository(), FakeNewsRepository()
         )
     )
-}
+}*/
 
 

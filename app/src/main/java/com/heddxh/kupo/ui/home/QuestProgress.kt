@@ -28,13 +28,18 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.heddxh.kupo.R
-import com.heddxh.kupo.ui.theme.KupoTheme
+import com.heddxh.kupo.util.Quest
 
 @Composable
-fun QuestProgress(quest: Quest, modifier: Modifier = Modifier, onDrag: (Float) -> Unit = {}) {
+fun QuestProgress(
+    quest: Quest,
+    progress: Float,
+    modifier: Modifier = Modifier,
+    onDrag: (Float) ->
+    Unit = {}
+) {
     val dragOffset = remember { mutableFloatStateOf(0f) }
     Box(
         contentAlignment = Alignment.Center, modifier = modifier
@@ -85,7 +90,7 @@ fun QuestProgress(quest: Quest, modifier: Modifier = Modifier, onDrag: (Float) -
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = quest.versionTitle, style = MaterialTheme.typography.titleLarge
+                    text = quest.title, style = MaterialTheme.typography.titleLarge
                 )
             }
         }
@@ -103,16 +108,17 @@ fun QuestProgress(quest: Quest, modifier: Modifier = Modifier, onDrag: (Float) -
                         easing = EaseOutBounce
                     )
                 )
-                .fillMaxWidth(quest.progress)
+                .fillMaxWidth(progress)
                 .align(Alignment.CenterStart)
         )
     }
 }
 
+/*
 @Preview
 @Composable
 fun QuestProgressPreview() {
     KupoTheme {
         QuestProgress(Quest())
     }
-}
+}*/

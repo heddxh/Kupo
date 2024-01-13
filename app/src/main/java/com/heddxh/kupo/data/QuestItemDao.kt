@@ -8,17 +8,24 @@ import androidx.room.Query
 @Dao
 interface QuestItemDao {
 
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(questItem: QuestItem)
 
-    @Query("SELECT * from quests WHERE id = :id")
-    fun getItem(id: Int): QuestItem
+    @Query("SELECT * FROM quests WHERE id = :id")
+    suspend fun getQuestFromId(id: Int): QuestItem
 
-    @Query("SELECT * from quests ORDER BY id ASC")
-    fun getAllItems(): List<QuestItem>
+    @Query("SELECT * FROM quests WHERE version = :version")
+    suspend fun getQuestsFromVersion(version: String): List<QuestItem>
 
-    //获取表长度
-    @Query("SELECT COUNT(*) FROM quests")
-    suspend fun getCurrentCount(): Int
+    @Query("SELECT * FROM quests ORDER BY id ASC")
+    suspend fun getAllQuests(): List<QuestItem>
 
+    @Query("SELECT COUNT(*) FROM quests WHERE version = :version")
+    suspend fun countFromVersion(version: String): Int
+
+    @Query("SELECT id FROM quests WHERE version = :version ORDER BY id ASC LIMIT 1")
+    suspend fun getVersionFstId(version: String): Int
+
+    @Query("SELECT id FROM quests WHERE version = :version ORDER BY id DESC LIMIT 1")
+    suspend fun getVersionLstId(version: String): Int
 }

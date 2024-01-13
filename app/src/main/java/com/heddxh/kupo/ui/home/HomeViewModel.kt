@@ -11,6 +11,8 @@ import com.heddxh.kupo.network.beginnerSearchProvider
 import com.heddxh.kupo.network.model.News
 import com.heddxh.kupo.network.model.SearchResult
 import com.heddxh.kupo.network.wikiSearchProvider
+import com.heddxh.kupo.util.Quest
+import com.heddxh.kupo.util.QuestsUtil
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,40 +27,50 @@ class HomeViewModel(
     private val newsRepository: NewsRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(HomeUiState())
-    val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+    val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow() // Export read-only state for Ui
 
     init {
         val ioScope = CoroutineScope(Dispatchers.IO)
-        // 下载任务数据
+
+        // Check weather all quests are downloaded. If not, download them.
         ioScope.launch {
-            val currentCount = questsRepository.getCurrentCount()
-            if (currentCount == 0) {
-                Log.d("HomeViewModel", "Quests need to download")
-                networkService.downloadQuestsData(questsRepository)
-            } else {
-                Log.d("HomeViewModel", "init: $currentCount, don't need to download")
-            }
-            val questsItems = questsRepository.getAllItems()
-            val count = questsItems.size
-            val quests = mutableListOf<Quest>()
-            if (count == 0) {
-                Log.e("HomeViewModel", "Can't get quests")
-            }
-            for (item in questsItems) {
-                quests.add(
-                    Quest(
-                        id = item.id,
-                        title = item.name,
-                        progress = item.id / count.toFloat(),
+            _uiState.update { it.copy(isQuestLoading = true) }
+            val validVersions = QuestsUtil.validVersions()
+            validVersions.forEach {
+                if (questsRepository.checkCompletionPerVersion(it)) {
+                    Log.d(
+                        "HomeViewModel",
+                        "Quests of ${QuestsUtil(it).name} don't need to download"
                     )
-                )
+                } else {
+                    Log.d(
+                        "HomeViewModel",
+                        "Quests of ${QuestsUtil(it).name} need to download"
+                    )
+                    networkService.downloadQuestsData(questsRepository, it) //TODO: 并发
+                }
             }
-            _uiState.update { currentState ->
-                currentState.copy(quests = quests)
+            val currentVersion = _uiState.value.currentQuest.version
+            val (fstId, lstId) = questsRepository.getCurrVerRange(currentVersion)
+            if (currentVersion in validVersions) {
+                val currentVersionQuests = questsRepository.getQuestsByVersion(currentVersion)
+                _uiState.update {
+                    it.copy(
+                        quests = currentVersionQuests.map { questItem ->
+                            questItem.toQuest()
+                        },
+                        isQuestLoading = false,
+                        currentQuest = Quest(), // TODO: get from user local data
+                        currRange = Pair(fstId, lstId)
+                    )
+                }
+                Log.d("HomeViewModel", "Prepared for quests")
+            } else {
+                Log.e("HomeViewModel", "Current version is invalid: $currentVersion")
             }
         }
 
-        // 下载新闻
+        // Fetch News
         ioScope.launch {
             val newsList = mutableListOf<News>()
             // Fixme: If network is quick, newsList will flash because of recomposition
@@ -140,15 +152,21 @@ class HomeViewModel(
             Log.e("HomeViewModel", "Quests are empty, disable drag")
             return
         }
-        val currentID = _uiState.value.currentQuest.id
-        Log.d("HomeViewModel", "current ID: $currentID, offset: $offset")
+        val currentId = _uiState.value.currentQuest.id
+        Log.d("HomeViewModel", "current ID: $currentId, offset: $offset")
         _uiState.update {
-            if ((offset < 0) and (currentID > 0)) {
-                // 向左
-                it.copy(currentQuest = it.quests[currentID - 2])// 修正下标与ID的偏移
-            } else if ((offset > 0) and (currentID < it.quests.size)) {
-                // 向右
-                it.copy(currentQuest = it.quests[currentID + 1])
+            if ((offset < 0) and (currentId >= it.currRange.first)) {
+                // Left, previous
+                it.copy(
+                    currentQuest = it.quests[it.quests.indexOf(it.currentQuest) - 1],
+                    progress = it.progress - (1f / QuestsUtil(it.currentQuest.version).number)
+                )
+            } else if ((offset > 0) and (currentId <= it.currRange.second)) {
+                // Right, next
+                it.copy(
+                    currentQuest = it.quests[it.quests.indexOf(it.currentQuest) + 1],
+                    progress = it.progress + (1f / QuestsUtil(it.currentQuest.version).number)
+                )
             } else {
                 it
             }
@@ -156,14 +174,6 @@ class HomeViewModel(
     }
 }
 
-private val fakeNews = News(
-    link = "https://ff.sdo.com/web6/news/newsContent/2021/08/31/5309_929456.html",
-    homeImagePath = "https://ff.sdo.com/web6/news/newsContent/2021/08/31/5309_929456.jpg",
-    publishDate = "2021-08-31 17:00:00",
-    sortIndex = 1,
-    summary = "《最终幻想XIV》与《最终幻想XV》联动活动“暗影之逆焰”将于2021年9月13日（周一）开始！",
-    title = "《最终幻想XIV》与《最终幻想XV》联动活动“暗影之逆焰”将于2021年9月13日（周一）开始！"
-)
 
 /**
  * State data class for HomeViewModel
@@ -172,8 +182,11 @@ private val fakeNews = News(
  * @param searchQuery the query string user searching
  * @param searchResults list of [SearchResult] to display
  * @param isSearchLoading indicate whether the search is loading from the network
- * @param currentQuest current [Quest] displayed in QuestProgress, TODO: Should get from local data
+ * @param currentQuest current [Quest] displayed in QuestProgress
+ * @param currRange id range of current version
+ * @param progress for QuestProgress to display current progress
  * @param quests list of [Quest] Stored for QuestProgress
+ * @param isQuestLoading indicate whether the quest is loading from the network
  */
 data class HomeUiState(
     // News
@@ -185,13 +198,17 @@ data class HomeUiState(
     val isSearchLoading: Boolean = false,
     // Quest
     val currentQuest: Quest = Quest(),
-    val quests: List<Quest> = emptyList()
+    val currRange: Pair<Int, Int> = Pair(217, 322),
+    val progress: Float = (66 / 106.toFloat()),
+    val quests: List<Quest> = emptyList(),
+    val isQuestLoading: Boolean = false
 )
 
-data class Quest(
-    val id: Int = 66,
-    val version: String = "5.0",
-    val title: String = "地面冷若冰霜，天空遥不可及",
-    val progress: Float = (66 / 106.toFloat()),
-    val versionTitle: String = "暗影之逆焰主线任务",
+private val fakeNews = News(
+    link = "https://ff.sdo.com/web6/news/newsContent/2021/08/31/5309_929456.html",
+    homeImagePath = "https://ff.sdo.com/web6/news/newsContent/2021/08/31/5309_929456.jpg",
+    publishDate = "2021-08-31 17:00:00",
+    sortIndex = 1,
+    summary = "《最终幻想XIV》与《最终幻想XV》联动活动“暗影之逆焰”将于2021年9月13日（周一）开始！",
+    title = "《最终幻想XIV》与《最终幻想XV》联动活动“暗影之逆焰”将于2021年9月13日（周一）开始！"
 )
